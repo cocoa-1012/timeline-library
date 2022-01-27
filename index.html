@@ -1,0 +1,284 @@
+<!DOCTYPE html>
+<html>
+
+<head>
+  <script src="https://ajax.googleapis.com/ajax/libs/jquery/3.6.0/jquery.min.js"></script>
+  <script type="text/javascript">
+    var tick = 0;
+    var clearTimeLine;
+    $(document).ready(function () {
+      UpdateTimerPane();
+      // UpdateTimerPaneNew();
+    });
+
+    let oneDayTime = new Date();
+
+    function UpdateTimerPane() {
+
+      let divEle = document.createElement('div');
+      divEle.id = "timeLine";
+      divEle.className = 'pane';
+
+      // console.log('function called');
+
+      // =========================
+      for (let i = 0; i < 24; i++) {
+        let div24 = document.createElement('div');
+
+        div24.id = "hour" + i;
+        // console.log('Hour i', i);
+        let h = i;
+        if (i < 10) {
+          h = `0${h}`;
+        }
+        for (let j = 1; j < 60; j++) {
+          let divMin = document.createElement('div');
+          divMin.className = "minute";
+          let m = j;
+          if (j < 10) {
+            m = `0${m}`;
+          }
+          divMin.dataset.hourminute = `${h} : ${m}`;
+          divMin.dataset.hourminutedisplay = tConvert(h + ":" + m);
+          for (let k = 1; k < 60; k++) {
+            let s = k;
+            if (k < 10) {
+              s = `0${s}`;
+            }
+            if (k % 10 == 0) {
+              let elemSplit = document.createElement('span');
+              elemSplit.className = 'minute-split';
+              elemSplit.id = `second${h}${m}${s}`;
+              divMin.appendChild(elemSplit);
+              // $('.pane').append(":");
+            }
+            else {
+              let elemSec = document.createElement('span');
+              elemSec.className = 'second';
+              elemSec.id = `second${h}${m}${s}`;
+              divMin.appendChild(elemSec);
+              // $('.pane').append(".");
+            }
+            // console.log('Second K', k);
+          }
+          div24.appendChild(divMin);
+        }
+        divEle.appendChild(div24);
+      }
+
+
+      // =========================
+
+      let parentContainer = $('#pane');
+      parentContainer.append(divEle);
+      // console.log('End');
+      startTimeLine();
+      // document.getElementById('timeLine').addEventListener('scroll', (event) => {
+      //     // handle the scroll event 
+      //     console.log("evvv", event);
+      // });
+    }
+
+    function stopTimeLine() {
+      clearInterval(clearTimeLine);
+      clearTimeLine = null;
+    }
+
+    function goto(h, m, s) {
+      document.getElementById(`second${h}${m}${s}`).scrollIntoView({behavior: "smooth", inline: "end"});
+    }
+
+    var timeLineDraggingEnabled = false;
+
+    function startTimeLine() {
+      let time = new Date();
+      let hour = time.getHours();
+      let min = time.getMinutes();
+      let sec = time.getMinutes();
+      console.log(hour, min, sec);
+      clearTimeLine = setInterval(() => {
+        if (sec == 59) {
+          sec = 0
+          if (min == 59) {
+            min = 0;
+            if (hour == 59) {
+              hour = 0
+            } else {
+              hour = hour + 1
+            }
+          } else {
+            min = min + 1;
+          }
+        } else {
+          sec = sec + 1;
+        }
+        // console.log("log", `second${hour}${min}${sec}`);
+
+        chour = hour >= 10 ? hour : `0${hour}`;
+        cmin = min >= 10 ? min : `0${min}`;
+        csec = sec >= 10 ? sec : `0${sec}`;
+
+        document.getElementById('time').innerHTML = `${chour}:${cmin}:${csec}`;
+        let coordinates = document.getElementById(`second${chour}${cmin}${csec}`).getBoundingClientRect();
+        console.log(coordinates.x);
+        if (!timeLineDraggingEnabled)
+          document.getElementById('timeLine').scrollBy(coordinates.x, 0);
+      }, 1000);
+
+      let masterPaneContainer = document.getElementById('timeLine');
+      let mouseDown = false;
+      let startX, scrollLeft;
+      let startDragging = function (e) {
+        mouseDown = true;
+        timeLineDraggingEnabled = true;
+        startX = e.pageX - masterPaneContainer.offsetLeft;
+        scrollLeft = masterPaneContainer.scrollLeft;
+      };
+      let stopDragging = function (event) {
+        mouseDown = false;
+      };
+      masterPaneContainer.addEventListener('mousemove', (e) => {
+        e.preventDefault();
+        if (!mouseDown) {return;}
+        const x = e.pageX - masterPaneContainer.offsetLeft;
+        const scroll = x - startX;
+        masterPaneContainer.scrollLeft = scrollLeft - scroll;
+      });
+
+      masterPaneContainer.addEventListener('mousedown', startDragging, false);
+      masterPaneContainer.addEventListener('mouseup', stopDragging, false);
+      masterPaneContainer.addEventListener('mouseleave', stopDragging, false);
+    }
+
+    function setLiveMode() {
+      timeLineDraggingEnabled = false;
+    }
+
+    function tConvert(time) {
+      // Check correct time format and split into components
+      time = time.toString().match(/^([01]\d|2[0-3])(:)([0-5]\d)(:[0-5]\d)?$/) || [time];
+
+      if (time.length > 1) { // If time format correct
+        time = time.slice(1);  // Remove full string match value
+        time[5] = +time[0] < 12 ? 'AM' : 'PM'; // Set AM/PM
+        time[0] = +time[0] % 12 || 12; // Adjust hours
+      }
+      return time.join(''); // return adjusted time or original string
+    }
+
+
+  </script>
+  <style type="text/css">
+    [draggable=true] {
+      -moz-user-select: none;
+      -khtml-user-select: none;
+      -webkit-user-select: none;
+      user-select: none;
+      /* Required to make elements draggable in old WebKit */
+      -khtml-user-drag: element;
+      -webkit-user-drag: element;
+    }
+
+    body {
+      background-color: #353f4c;
+      font-family: Verdana, Geneva, Tahoma, sans-serif;
+      font-weight: lighter;
+      overflow: hidden;
+    }
+
+    /* body::-webkit-scrollbar {
+            display: none;
+            width: 0;
+            background: transparent;
+        } */
+
+    .minute {
+      display: inline-block;
+      /* width: 1px; */
+      /* margin-right: 1px; */
+      min-height: 20px;
+      /* background-color: #f9f9f9; */
+      position: relative;
+      color: #f9f9f9;
+      font-size: 11px;
+    }
+
+    .minute::before {
+      content: attr(data-hourminutedisplay);
+      position: absolute;
+      /* left: calc(-45px / 2); */
+      /* transform: translateX(-50%); */
+      top: -20px;
+      min-width: 45px;
+      font-size: 12px;
+      text-align: center;
+    }
+
+    .minute::after {
+      content: '';
+      position: absolute;
+      bottom: 0;
+      left: 0;
+      top: -5px;
+      width: 1px;
+      height: 15px;
+      background-color: #f9f9f9;
+    }
+
+    .minute-split {
+      display: inline-block;
+      width: 1px;
+      margin-right: 1px;
+      height: 8px;
+      background-color: #f7f7f7;
+    }
+
+    .second {
+      display: inline-block;
+      width: 1px;
+      margin-right: 1px;
+      /* width: calc(4px - 2px); */
+      /* margin: 0 1px; */
+      height: 5px;
+      background-color: #d50000;
+      /* visibility: hidden; */
+    }
+
+    .pane {
+      display: flex;
+      overflow: auto;
+      /* margin-top: 30px; */
+      min-height: 70px;
+      -ms-overflow-style: none;
+      scrollbar-width: none;
+      position: relative;
+    }
+
+    .pane>div {
+      flex-shrink: 0;
+      display: flex;
+      align-items: flex-end;
+    }
+
+    /* 
+        .pane::-webkit-scrollbar {
+            display: none;
+            width: 0;
+            background: transparent;
+        } */
+
+    .pane span {
+      /* flex-shrink: 0;
+            flex-grow: 1; */
+    }
+  </style>
+</head>
+
+<body>
+  <div id="pane"></div>
+  <div id="time"></div>
+
+  <button onclick="setLiveMode()">Live</button>
+</body>
+
+</html>
